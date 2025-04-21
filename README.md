@@ -1,5 +1,5 @@
 # Blackjack
-This program is a single page, web-based game of blackjack with a win-loss counter. As it is web based, it can be easily run by anyone, as long as they have a browser. Check out demo.mp4 to see it in action!
+This program is a single page, web-based game of blackjack with a win-loss counter. As it is web based, it can be easily run by anyone, as long as they have a browser. Check out Blackjack Demo.mov to see it in action!
 
 It is made using only HTML and javascript, while images are sourced externally from stock images.
 
