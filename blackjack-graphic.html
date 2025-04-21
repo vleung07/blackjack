@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<!-- 
+ FileName: Blackjack.html
+ Description:
+ single page javascript and html program to play blackjack\
+
+ Date: April 21, 2025
+ Author: Vanessa Leung
+
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blackjack Game with Images</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #2e7d32;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .cards img {
+      height: 100px;
+      margin: 5px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .status {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>Blackjack</h1>
+  <div id="win-loss-count"></div>
+  <div>
+    <h2>Dealer's Hand</h2>
+    <div id="dealer-cards" class="cards"></div>
+    <div id="dealer-total"></div>
+  </div>
+
+  <div>
+    <h2>Your Hand</h2>
+    <div id="player-cards" class="cards"></div>
+    <div id="player-total"></div>
+  </div>
+
+  <button onclick="hit()">Hit</button>
+  <button onclick="stand()">Stand</button> <br>
+  <button onclick="startGame()">Play again</button>
+
+  <div class="status" id="status"></div>
+
+  <script>
+    const suits = ['S', 'H', 'D', 'C'];
+    const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+
+    let deck = [];  // An array of the 52 card deck
+    let playerHand = [];
+    let dealerHand = [];
+    let gameOver = false;
+
+    var win = 0
+    var loss = 0
+
+    /*
+     * Generate a deck with 52 cards and put it in the deck array.
+     * The deck array will have values such as 1S and 3H representing Ace of spade and 3 of Hearts.
+     *
+     */
+    function createDeck() {
+      deck = [];
+      for (let suit of suits) {
+        for (let value of values) {
+          let imgCode = (value === '10' ? '0' : value[0]) + suit;
+          deck.push({ value, suit, code: imgCode.toUpperCase() });
+        }
+      }
+      deck.sort(() => Math.random() - 0.5);
+    }
+
+    /*
+     * Function to get the value of a card
+     * Parameter:
+     *    card: the string of the card. i.e. 5H, JS etc
+     * Return:
+     *    The numeric value of the card i.e. 10, 5. Ace will be returned as 11.
+     */
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.value)) return 10;
+      if (card.value === 'A') return 11;
+      return parseInt(card.value);
+    }
+
+    /*
+    * Function to get the total numerical value of a hand
+    * Parameter: 
+    *     Hand: array of cards
+    * Return:
+    *     The sum of all card values in a hand
+    */
+   function getHandValue(hand) {
+      let value = hand.reduce((sum, card) => sum + getCardValue(card), 0);
+      let aces = hand.filter(card => card.value === 'A').length;
+      while (value > 21 && aces > 0) {
+        value -= 10;
+        aces--;
+      }
+      return value;
+    }
+
+    /*
+    * Function to show images of the player and dealer cards
+    */ 
+   function displayCards() {
+      let playerDiv = document.getElementById("player-cards");
+      let dealerDiv = document.getElementById("dealer-cards");
+
+      playerDiv.innerHTML = "";
+      dealerDiv.innerHTML = "";
+
+      playerHand.forEach(card => { // creates an image for each of the dealer's card
+        let img = document.createElement("img");
+        img.src = `https://deckofcardsapi.com/static/img/${card.code}.png`;
+        img.alt = card.value + card.suit;
+        playerDiv.appendChild(img);
+      });
+
+      dealerHand.forEach((card, index) => { // creates an image for each of the dealer's card
+        let img = document.createElement("img");
+        if (!gameOver && index === 1) {
+          img.src = "https://deckofcardsapi.com/static/img/back.png"; // dealer's first card hidden if the game is ongoing
+        } else {
+          img.src = `https://deckofcardsapi.com/static/img/${card.code}.png`; // show dealer's cards if the game has ended
+        }
+        img.alt = card.value + card.suit;
+        dealerDiv.appendChild(img);
+      });
+
+      document.getElementById("player-total").innerText = "Total: " + getHandValue(playerHand);
+      document.getElementById("dealer-total").innerText =
+        gameOver ? "Total: " + getHandValue(dealerHand) : "Total: ?";
+    }
+
+    /*
+    * Function to display the win and loss counter
+    */
+   function displayWinLossCount() { 
+      document.getElementById("win-loss-count").innerText = "Win: " + win + " Loss: " + loss;
+    }
+    /*
+    * Function to give the player another card
+    */
+    function hit() {
+      if (gameOver) return;
+      playerHand.push(deck.pop());
+      if (getHandValue(playerHand) > 21) {
+        endGame("You busted! Dealer wins.");
+        loss = loss + 1;
+        displayWinLossCount();
+      }
+      displayCards();
+    }
+    /*
+    * Function to show end the player turn and show the dealer's hand
+    */
+    function stand() {
+      if (gameOver) return;
+      while (getHandValue(dealerHand) < 17) {
+        dealerHand.push(deck.pop());
+      }
+      let playerTotal = getHandValue(playerHand);
+      let dealerTotal = getHandValue(dealerHand);
+
+      if (dealerTotal > 21 || playerTotal > dealerTotal) {
+        endGame("You win!");
+        win = win +1;
+        displayWinLossCount();
+      } else if (dealerTotal > playerTotal) {
+        endGame("Dealer wins!"); 
+        loss = loss + 1;
+        displayWinLossCount();
+      } else {
+        endGame("It's a tie!");
+      }
+    }
+    /*
+    * Function to display end game message 
+    * Parameter:
+    *     Message: string to tell the player whether they won
+    */
+    function endGame(message) {
+      gameOver = true;
+      document.getElementById("status").innerText = message;
+      displayCards();
+    }
+
+    /*
+    * Function to start the game
+    */
+    function startGame() {
+      createDeck();
+      gameOver = false;
+      playerHand = [deck.pop(), deck.pop()]; // Give 2 cards to player's hand
+      dealerHand = [deck.pop(), deck.pop()]; // Give 2 cards to dealer's hand
+      document.getElementById("status").innerText = "";
+      displayCards();
+    }
+
+    startGame();
+  </script>
+</body>
+</html>
